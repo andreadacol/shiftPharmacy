@@ -1,0 +1,60 @@
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton,
+    QListWidget, QLabel, QHBoxLayout
+)
+import sys
+
+from pharmacy_hours_dialog import PharmacyHoursDialog
+from employee_dialog import EmployeeDialog
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Gestore Turni Farmacia")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.pharmacy_hours = {}
+        self.employees = ["Alice", "Bob", "Chiara", "Davide"]
+
+        central_widget = QWidget()
+        layout = QVBoxLayout()
+
+        self.employee_list = QListWidget()
+        self.employee_list.addItems(self.employees)
+        layout.addWidget(QLabel("Dipendenti"))
+        layout.addWidget(self.employee_list)
+
+        buttons_layout = QHBoxLayout()
+        
+        self.edit_employees_button = QPushButton("Modifica Dipendenti")
+        self.edit_employees_button.clicked.connect(self.edit_employees)
+        buttons_layout.addWidget(self.edit_employees_button)
+
+        self.edit_hours_button = QPushButton("Orari Farmacia")
+        self.edit_hours_button.clicked.connect(self.edit_hours)
+        buttons_layout.addWidget(self.edit_hours_button)
+
+        layout.addLayout(buttons_layout)
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+
+    def edit_employees(self):
+        dialog = EmployeeDialog(self, self.employees)
+        if dialog.exec_():
+            self.employees = dialog.get_employees()
+            self.employee_list.clear()
+            self.employee_list.addItems(self.employees)
+
+    def edit_hours(self):
+        dialog = PharmacyHoursDialog(self)
+        if dialog.exec_():
+            self.pharmacy_hours = dialog.get_hours()
+            print("Orari farmacia aggiornati:")
+            print(self.pharmacy_hours)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
+
