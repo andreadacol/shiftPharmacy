@@ -8,8 +8,8 @@ class PharmacyHoursDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Orari Farmacia")
-        self.days = ["Lunedì", "Martedì", "Mercoledì", "Giovedì",
-                     "Venerdì", "Sabato", "Domenica"]
+        self.days = ["lunedì", "martedì", "mercoledì", "giovedì",
+                     "venerdì", "sabato", "domenica"]
 
         self.time_fields = {}
 
@@ -23,8 +23,8 @@ class PharmacyHoursDialog(QDialog):
             pm_open = QCheckBox("Pomeriggio Aperto")
             am_open.setChecked(True); pm_open.setChecked(True)
 
-            am_start.setTime(QTime(8, 30)); am_end.setTime(QTime(12, 30))
-            pm_start.setTime(QTime(15, 30)); pm_end.setTime(QTime(19, 0))
+            am_start.setTime(QTime(8, 00)); am_end.setTime(QTime(12, 00))
+            pm_start.setTime(QTime(12, 00)); pm_end.setTime(QTime(20, 0))
 
             self.time_fields[day] = {
                 "am_start": am_start, "am_end": am_end,

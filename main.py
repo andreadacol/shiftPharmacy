@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
     def generate_schedule_ui(self):
         year = self.year_input.value()
         month = self.month_input.value()
-
+        
         if not self.employees:
             self.result_output.setText("Errore: nessun dipendente inserito.")
             return
@@ -97,7 +97,13 @@ class MainWindow(QMainWindow):
             self.result_output.setText("Errore: orari farmacia non definiti.")
             return
 
-        schedule = generate_schedule(year, month, self.employees, self.pharmacy_hours)
+        schedule = generate_schedule(self.pharmacy_hours, self.employees, year, month)
+
+
+        print("Orari farmacia:", self.pharmacy_hours)
+
+        print("Dipendenti:", self.employees)
+
 
         if not schedule:
             self.result_output.setText("Nessun turno generato.")
@@ -107,12 +113,11 @@ class MainWindow(QMainWindow):
         output = ""
         for day, shifts in sorted(schedule.items()):
             output += f"\n📅 {day}:\n"
-            for shift in shifts:
-                interval = f"{shift['interval'][0]} - {shift['interval'][1]}"
-                names = ", ".join(shift['employees'])
-                output += f"  🕒 {interval}: {names}\n"
+            for employee, intervals in shifts.items():
+                for interval in intervals:
+                    output += f"  👤 {employee}: 🕒 {interval[0]} - {interval[1]}\n"
 
-        self.result_output.setText(output)
+                self.result_output.setText(output)
 
 
 if __name__ == "__main__":

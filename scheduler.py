@@ -1,63 +1,94 @@
 from datetime import datetime, timedelta
-import calendar
+from typing import List, Dict, Tuple
 import random
 
-def generate_schedule(year, month, employees, pharmacy_hours):
-    """
-    Genera un piano turni base per il mese indicato.
-    - year: es. 2025
-    - month: es. 5 (Maggio)
-    - employees: lista dei nomi dei dipendenti
-    - pharmacy_hours: dizionario { 'YYYY-MM-DD': [('08:00', '12:00'), ('15:30', '19:30')] }
-    """
+# Definizione dei turni
+CONTINUOUS_SHIFTS = [
+    [("08:00", "12:00")],
+    [("08:00", "13:00")],
+    [("08:00", "14:00")],
+    [("15:00", "20:00")],
+    [("14:00", "20:00")],
+]
 
+SPLIT_SHIFTS = [
+    [("08:00", "12:00"), ("16:00", "20:00")],
+    [("08:00", "12:00"), ("15:00", "19:00")],
+]
+
+ALL_SHIFT_OPTIONS = CONTINUOUS_SHIFTS + SPLIT_SHIFTS
+
+# Orari di apertura della farmacia
+pharmacy_hours = {
+    'Lunedì':    {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Martedì':   {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Mercoledì': {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Giovedì':   {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Venerdì':   {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Sabato':    {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': True},
+    'Domenica':  {'am': ('08:00', '12:30'), 'pm': ('12:30', '20:00'), 'am_open': True, 'pm_open': False}
+}
+
+employees = ['Alice', 'Bob', 'Chiara', 'Davide']
+
+def parse_time(time_str: str) -> datetime:
+    return datetime.strptime(time_str, "%H:%M")
+
+def shift_fits_in_opening_hours(shift: List[Tuple[str, str]], opening: Dict) -> bool:
+    for part in shift:
+        start, end = parse_time(part[0]), parse_time(part[1])
+        if start < parse_time(opening['am'][0]) or end > parse_time(opening['pm'][1]):
+            print(f"  ⚠️ Turno {part} NON compatibile con {opening['am'][0]}-{opening['pm'][1]}")
+            return False
+    print(f"  ✅ Turno {shift} compatibile")
+    return True
+
+def generate_schedule(pharmacy_hours: Dict, employees: List[str], year: int, month: int) -> Dict:
     schedule = {}
-    employee_hours = {e: 0 for e in employees}
-    weekend_counts = {e: 0 for e in employees}
+    day = datetime(year, month, 1)
 
-    days_in_month = calendar.monthrange(year, month)[1]
-    base_date = datetime(year, month, 1)
+    weekday_map = {
+        "monday": "lunedì",
+        "tuesday": "martedì",
+        "wednesday": "mercoledì",
+        "thursday": "giovedì",
+        "friday": "venerdì",
+        "saturday": "sabato",
+        "sunday": "domenica",
+    }
 
-    for day in range(1, days_in_month + 1):
-        current_date = base_date.replace(day=day)
-        day_str = current_date.strftime('%Y-%m-%d')
-        weekday = current_date.weekday()
+    while day.month == month:
+        weekday_str = day.strftime("%A")
+        print(weekday_str)
+#        weekday = weekday_map[weekday_str]
+        weekday = weekday_str
 
-        if day_str not in pharmacy_hours:
-            continue  # farmacia chiusa
+        opening = pharmacy_hours[weekday]
 
-        schedule[day_str] = []
-        intervals = pharmacy_hours[day_str]
+        print(f"\n📅 Giorno: {day.strftime('%Y-%m-%d')} ({weekday})")
+        print(f"  Orari farmacia: {opening}")
 
-        for interval in intervals:
-            start, end = interval
-            hour_start = int(start.split(":")[0])
-            hour_end = int(end.split(":")[0])
-            hours = hour_end - hour_start
+        valid_shifts = []
+        for shift in ALL_SHIFT_OPTIONS:
+            if shift_fits_in_opening_hours(shift, opening):
+                valid_shifts.append(shift)
 
-            # In certi orari, basta 1 persona
-            if any(hour_start <= h < hour_end for h in [8, 12, 19]):
-                required = 1
-            else:
-                required = 2
+        if not valid_shifts:
+            print("  ❌ Nessun turno valido per questo giorno")
+            day += timedelta(days=1)
+            continue
 
-            # Prendiamo i dipendenti con meno ore
-            sorted_emps = sorted(employees, key=lambda e: employee_hours[e])
-            assigned = []
+        schedule[day.strftime("%Y-%m-%d")] = {}
 
-            for e in sorted_emps:
-                if employee_hours[e] + hours <= 40:
-                    assigned.append(e)
-                    employee_hours[e] += hours
-                    if weekday >= 5:
-                        weekend_counts[e] += 1
-                    if len(assigned) >= required:
-                        break
+        for emp in employees:
+            shift = random.choice(valid_shifts)
+            schedule[day.strftime("%Y-%m-%d")][emp] = shift
+            print(f"  👤 {emp} assegnato al turno: {shift}")
 
-            schedule[day_str].append({
-                "interval": interval,
-                "employees": assigned
-            })
+        day += timedelta(days=1)
 
     return schedule
 
+# Eseguiamo un test
+#schedule_debug = generate_schedule(pharmacy_hours, employees, 2025, 5)
+#schedule_debug.get("2025-05-01", "Nessun turno")

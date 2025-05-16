@@ -17,6 +17,13 @@ class EmployeeDialog(QDialog):
         self.name_input.setPlaceholderText("Nome dipendente")
         layout.addWidget(self.name_input)
 
+        self.list_widget.itemClicked.connect(self.load_employee_for_edit)
+        self.editing_index = None
+
+        self.hours_input = QLineEdit()
+        self.hours_input.setPlaceholderText("Ore settimanali (default 40)")
+        layout.addWidget(self.hours_input)
+
         add_btn = QPushButton("Aggiungi")
         add_btn.clicked.connect(self.add_employee)
         remove_btn = QPushButton("Rimuovi selezionato")
@@ -35,12 +42,36 @@ class EmployeeDialog(QDialog):
 
     def add_employee(self):
         name = self.name_input.text().strip()
-        if name and name not in self.employees:
-            self.employees.append(name)
-            self.list_widget.addItem(name)
-            self.name_input.clear()
-        else:
-            QMessageBox.warning(self, "Errore", "Nome vuoto o già esistente")
+        hours_text = self.hours_input.text().strip()
+
+        if not name:
+            QMessageBox.warning(self, "Errore", "Nome vuoto.")
+            return
+
+        if any(emp['name'] == name for emp in self.employees):
+            QMessageBox.warning(self, "Errore", "Dipendente già esistente.")
+            return
+
+        try:
+            hours = int(hours_text) if hours_text else 40
+            if hours <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Errore", "Ore settimanali non valide.")
+            return
+
+        employee = {"name": name, "hours": hours}
+        self.employees.append(employee)
+        self.list_widget.addItem(f"{name} ({hours}h)")
+        self.name_input.clear()
+        self.hours_input.clear()
+
+    def load_employee_for_edit(self, item):
+        row = self.list_widget.row(item)
+        emp = self.employees[row]
+        self.name_input.setText(emp["name"])
+        self.hours_input.setText(str(emp["hours"]))
+        self.editing_index = row
 
     def remove_employee(self):
         row = self.list_widget.currentRow()
